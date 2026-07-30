@@ -12,16 +12,25 @@
 // last sample = current weights; temp is caller-owned scratch of output's
 // size so the call allocates nothing).
 //
-// Backends by build target — see plan/gemm-backends/ for the decision:
-//   - darwin: Accelerate cblas_sgemm (gemm_accelerate.go)
-//   - linux + xsmm tag: libxsmm pre-dispatched JIT kernels (M9.3)
-//   - otherwise: gonum, pure Go, reentrant (gemm_gonum.go)
+// Backends by build target (revised 2026-07-30 in panaudia-engine —
+// see PROVENANCE.md divergence #3 and plan/gemm-backends/ for the
+// original decision):
+//   - xsmm tag (linux or darwin): libxsmm pre-dispatched JIT kernels
+//     (M9.3; AArch64 JIT verified on macOS) — production, and the fast
+//     dev-Mac option
+//   - accelerate tag (darwin): Accelerate cblas_sgemm — DEMOTED from
+//     the darwin default: corrupts results when signals land mid-call
+//     (Go's runtime always signals; see gemm_accelerate.go and
+//     accelerate-bug-repro/); benchmarking only
+//   - otherwise: gonum, pure Go, reentrant (gemm_gonum.go) — the
+//     default everywhere untagged
 //
 // Every backend is single-threaded per call; parallelism belongs to the
-// render workers. All backends are reentrant (Accelerate is safe with
-// threading forced off per call shape; gonum is pure Go; libxsmm kernels
-// are stateless) — the OpenBLAS shared-scratch race this replaces
-// (mixer.go's PANAUDIA_MIXER_GONUM escape hatch) is gone by construction.
+// render workers. The default and xsmm backends are reentrant (gonum is
+// pure Go; libxsmm kernels are stateless) — the OpenBLAS shared-scratch
+// race this package replaced is gone by construction, and
+// TestConcurrentParity is the permanent guard that caught Accelerate
+// doing the same class of thing.
 package gemm
 
 // checkShapes panics if the buffers cannot hold the requested shape — the

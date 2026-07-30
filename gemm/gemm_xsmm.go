@@ -1,4 +1,4 @@
-//go:build linux && xsmm
+//go:build (linux || darwin) && xsmm
 
 package gemm
 

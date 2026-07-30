@@ -55,3 +55,19 @@ every one surfaced and recorded):
    role (sink pose fresh, source pose jitter-aligned). Fallback preserves
    historical behaviour exactly when the setter is never called; the
    copied test suites pass unchanged.
+3. **GEMM backend defaults revised** (2026-07-30) — build-constraint
+   changes only, in `gemm/`: the darwin default is now **gonum**
+   (`gemm_gonum.go`: `!xsmm && !accelerate`); **Accelerate is demoted**
+   to opt-in `-tags accelerate` after `TestConcurrentParity` (flaking
+   in the copied suite, inherited from the source repo) was diagnosed
+   as Accelerate's `cblas_sgemm` returning corrupted results when a
+   signal is delivered mid-call on Apple silicon (Darwin 25.5 — AMX
+   state seemingly unpreserved across signal delivery; Go's
+   async-preemption SIGURG is the trigger, `asyncpreemptoff=1` goes
+   clean, and `gemm/accelerate-bug-repro/repro.c` reproduces it in
+   pure C with a SIGUSR1 pinger while the no-signal load is
+   bit-exact); **libxsmm extended to darwin** (`(linux || darwin) &&
+   xsmm`, plus the same widening of `xsmm_test.go`) — its AArch64 JIT
+   passes the concurrent-parity hammer, the JIT-serves gate, and the
+   budget gate on macOS at the pinned SHA. Backend files' bodies
+   untouched except documentation of the finding.

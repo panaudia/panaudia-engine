@@ -1,0 +1,17 @@
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+
+# Local env files — never commit real config/secrets. .env.example IS tracked.
+.env
+.env.local
+.env.*.local
+
+.DS_Store
+.idea
+
+CLAUDE.md
