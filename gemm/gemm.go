@@ -15,22 +15,19 @@
 // Backends by build target (revised 2026-07-30 in panaudia-engine —
 // see PROVENANCE.md divergence #3 and plan/gemm-backends/ for the
 // original decision):
+//   - darwin: Accelerate cblas_sgemm, SIGNAL-SHIELDED — an OS bug
+//     corrupts AMX state when a signal lands mid-call, so the call
+//     blocks signals for its microseconds (gemm_accelerate.go,
+//     accelerate-bug-repro/; reported to Apple)
 //   - xsmm tag (linux or darwin): libxsmm pre-dispatched JIT kernels
-//     (M9.3; AArch64 JIT verified on macOS) — production, and the fast
-//     dev-Mac option
-//   - accelerate tag (darwin): Accelerate cblas_sgemm — DEMOTED from
-//     the darwin default: corrupts results when signals land mid-call
-//     (Go's runtime always signals; see gemm_accelerate.go and
-//     accelerate-bug-repro/); benchmarking only
-//   - otherwise: gonum, pure Go, reentrant (gemm_gonum.go) — the
-//     default everywhere untagged
+//     (M9.3; AArch64 JIT verified on macOS) — production on x86 Linux
+//   - otherwise: gonum, pure Go, reentrant (gemm_gonum.go)
 //
 // Every backend is single-threaded per call; parallelism belongs to the
-// render workers. The default and xsmm backends are reentrant (gonum is
-// pure Go; libxsmm kernels are stateless) — the OpenBLAS shared-scratch
-// race this package replaced is gone by construction, and
-// TestConcurrentParity is the permanent guard that caught Accelerate
-// doing the same class of thing.
+// render workers. All are safe under concurrent calls — gonum is pure
+// Go, libxsmm kernels are stateless, Accelerate is shielded — and
+// TestConcurrentParity is the permanent guard: it retired an OpenBLAS
+// shared-scratch race and then caught the Accelerate signal bug.
 package gemm
 
 // checkShapes panics if the buffers cannot hold the requested shape — the

@@ -62,17 +62,17 @@ Plain `go build ./...` works everywhere — the runtime C (convolver,
 frame buffers, libopus via cgo) is in-repo or system-standard. GEMM
 backend by build tag:
 
-- **default: gonum** (pure Go, reentrant) — correct everywhere,
-  passes the 50-person budget gate.
-- **`-tags xsmm`: libxsmm** JIT kernels — production (x86 Linux) and
-  the fast option on Apple silicon (AArch64 JIT verified). Needs
-  libxsmm built at the pinned SHA (see panaudia's
+- **darwin default: Apple Accelerate, signal-shielded.** An OS bug
+  corrupts in-flight AMX state when a Unix signal lands mid-`sgemm`
+  (reported to Apple; standalone reproducer in
+  `gemm/accelerate-bug-repro/`), so the call blocks signals for its
+  few microseconds — ~375 ns overhead, hammer-validated. See
+  `gemm/gemm_accelerate.go`.
+- **`-tags xsmm`: libxsmm** JIT kernels — production (x86 Linux);
+  also builds on Apple silicon (AArch64 JIT verified). Needs libxsmm
+  built at the pinned SHA (see panaudia's
   `plan/gemm-backends/bench/README.md`).
-- **`-tags accelerate`: Apple Accelerate — benchmarking only.**
-  Demoted from the darwin default: results are corrupted when a Unix
-  signal lands mid-call on Apple silicon (AMX state loss; Go's runtime
-  signals constantly). See `gemm/gemm_accelerate.go` and the
-  standalone reproducer in `gemm/accelerate-bug-repro/`.
+- **default elsewhere: gonum** (pure Go, reentrant, zero deps).
 
 Tests: `go test ./...` (and `-race`). The M-series bilateral anchors,
 soak, and the 50-person budget gate are inherited from the source repo

@@ -83,13 +83,19 @@ func DefaultRenderParams() RenderParams {
 
 // ChannelParams is the space-scoped per-channel tier. Channels exist by
 // being named; an unnamed channel behaves as DefaultChannelParams.
+//
+// Semantics (base profile §4, pinned 2026-07-30): across a pair's
+// shared unmuted channels the highest set gain and lowest set
+// attenuation win; the winning gain then MULTIPLIES the entity's
+// render gain (unset = identity 1.0), and the winning attenuation
+// REPLACES the entity's attenuation only when explicitly set (unset =
+// no override). Gain and Attenuation are stored and carried today and
+// applied when Phase C's per-pair record lands — at which point this
+// struct grows a real "unset" representation for Attenuation (a plain
+// float cannot say no-override).
 type ChannelParams struct {
 	// Muted removes the channel from every audibility intersection.
-	Muted bool
-	// Gain and Attenuation are per-channel overrides (highest gain wins,
-	// lowest attenuation wins across shared channels). Stored and carried
-	// through the pair recompute; applied to the render when the per-pair
-	// gain path lands (see plan: per-pair record).
+	Muted       bool
 	Gain        float64
 	Attenuation float64
 }

@@ -1,4 +1,4 @@
-//go:build !xsmm && !accelerate
+//go:build !darwin && !xsmm
 
 package gemm
 

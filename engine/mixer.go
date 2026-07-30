@@ -383,8 +383,8 @@ func (m *Mixer) SetRenderParams(id string, p RenderParams) error {
 // two). Channels exist by being named; unnamed channels behave as
 // DefaultChannelParams. Muted takes effect on the next tick; Gain and
 // Attenuation are stored and carried but apply only when the per-pair
-// scalar path lands (Phase C — and after the base profile pins their
-// composition with entity render params, erratum candidate 11).
+// scalar path lands in Phase C (composition semantics now pinned —
+// see ChannelParams).
 func (m *Mixer) SetChannel(name string, p ChannelParams) {
 	m.enqueue(func() {
 		m.channelTable[name] = p
